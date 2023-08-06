@@ -38,14 +38,18 @@ library(quantmod)
 
 # https://financetrain.com/downloading-stock-data-in-r-using-quantmod
 
-getSymbols("GOOG",
+getSymbols("RH",
            from = "2022/11/30",
            to = "2023/03/31",
            periodicity = "daily")
 
 # Take all the interesting shares
 
-my_comp_symbols <- c("AAPL", "GOOG", "META")
+# Alphabet shares dive after Google AI chatbot Bard flubs answer in ad
+# By Martin Coulter and Greg Bensinger
+# February 9, 20231:49 AM GMT+1Updated 6 months ago
+
+my_comp_symbols <- c( "GOOG", "META", "AMZN", "AAPL", "MSFT", "NVDA")
 
 myStocks <-lapply(my_comp_symbols, function(x) {getSymbols(x, 
                                                              from ="2022/11/30", 
@@ -60,3 +64,5 @@ head(myStocks$AAPL)
 
 # We want only the adjusted stocks
 adjustedPrices <- lapply(myStocks, Ad)
+
+
