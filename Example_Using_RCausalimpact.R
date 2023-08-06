@@ -47,9 +47,11 @@ getSymbols("NYSE:RHT",
 
 # Alphabet shares dive after Google AI chatbot Bard flubs answer in ad
 # By Martin Coulter and Greg Bensinger
-# February 9, 20231:49 AM GMT+1Updated 6 months ago
+# February 9, 2023 1:49 AM GMT+1Updated 6 months ago
 
-my_comp_symbols <- c( "GOOG", "META", "AMZN", "AAPL", "MSFT", "NVDA")
+my_comp_symbols <- c( "GOOG",  "AMZN", "AAPL", "MSFT", "NVDA", "META")
+my_comp_symbols <- c( "GOOG",  "AMZN", "AAPL", "MSFT")
+
 
 myStocks <-lapply(my_comp_symbols, function(x) {getSymbols(x, 
                                                              from ="2022/11/30", 
@@ -61,8 +63,99 @@ names(myStocks) <- my_comp_symbols
 
 # let's look at the apple
 head(myStocks$AAPL)
+plot.xts(myStocks$AAPL)
 
 # We want only the adjusted stocks
 adjustedPrices <- lapply(myStocks, Ad)
 
+GOOG <- adjustedPrices$GOOG
+plot.xts(GOOG)
 
+stocks_df <- as.data.frame(adjustedPrices)
+
+pre.period <- as.Date(c("2022-11-30", "2023-02-08"))
+post.period <- as.Date(c("2023-02-09", "2023-03-30"))
+
+impact <- CausalImpact(stocks_df, pre.period, post.period)
+
+summary(impact, "report") # even better
+plot(impact)
+
+plot(impact, c("original"))
+
+#### Lets see what going on compared to the stocks in the basked
+
+library(ggplot2)
+
+stocks_df$date <- row.names(stocks_df)  
+
+# Convert to long format
+library(reshape)
+data_to_plot <- melt(stocks_df, id.vars = "date")
+data_to_plot$date <- as.Date(data_to_plot$date)
+
+# Plot the final data
+ggplot(data_to_plot,                           
+       aes(x = date,
+           y = value,
+           col = variable) ) + geom_line()
+
+# Lets make a nrm. bucket for the share-movement in the pre period and see 
+# how well it correlates to the chosen share
+pre.period
+
+library(dplyr)
+
+# filter only the preperiod
+data_pre.period <-  stocks_df %>% filter(date <= pre.period[2])
+
+# calculate the normalized movements
+data_pre.period$GOOG_norm <- data_pre.period$GOOG.Adjusted/data_pre.period$GOOG.Adjusted[1]
+data_pre.period$BUCKET_norm <- (
+  data_pre.period$AMZN.Adjusted +
+    data_pre.period$AAPL.Adjusted +
+    data_pre.period$MSFT.Adjusted
+) /
+  (
+    data_pre.period$AMZN.Adjusted[1] +
+      data_pre.period$AAPL.Adjusted[1] +
+      data_pre.period$MSFT.Adjusted[1]
+  )
+
+# look visually at the correlation
+plot(data_pre.period$GOOG_norm, data_pre.period$BUCKET_norm)
+# add the regression line
+abline(lm( data_pre.period$BUCKET_norm ~ data_pre.period$GOOG_norm), col = "red" )
+grid(nx = NULL, ny = NULL)
+
+cor(data_pre.period$GOOG_norm, data_pre.period$BUCKET_norm)
+# correlation of 93% !!!
+
+lm <- lm(data_pre.period$GOOG_norm ~  sqrt(data_pre.period$BUCKET_norm) )
+
+summary(lm)
+
+# R squared of 86% ! pretty good!
+
+## lets play with some non linear models
+library(nls2)
+
+# fit a non-linear model of the form y = a * b^x
+y <- data_pre.period$BUCKET_norm
+x <- data_pre.period$GOOG_norm
+
+model <- nls(y ~ a * b^x, start = list(a = 1, b = 1))
+
+# plot the data and the fitted curve
+ggplot(data.frame(x, y), aes(x, y)) +
+  geom_point() +
+  geom_smooth(method = "nls", formula = y ~ a * b^x,
+              method.args = list(start = list(a = 1, b = 1)),
+              se = FALSE)
+
+summary(model)
+
+library(modelr)
+
+# calculate R-squared
+rsquare(model, data.frame(x, y))
