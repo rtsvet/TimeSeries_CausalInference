@@ -125,14 +125,13 @@ data_pre.period$BUCKET_norm <- (
 # look visually at the correlation
 plot(data_pre.period$GOOG_norm, data_pre.period$BUCKET_norm)
 # add the regression line
-abline(lm( data_pre.period$BUCKET_norm ~ data_pre.period$GOOG_norm), col = "red" )
+lm <- lm( data_pre.period$BUCKET_norm ~ data_pre.period$GOOG_norm)
+abline( lm, col = "red" )
 grid(nx = NULL, ny = NULL)
+text(x = 0.95, y = 1, paste("R^2=", round(summary(lm)$adj.r.squared, digits=2)), col = "red")
 
 cor(data_pre.period$GOOG_norm, data_pre.period$BUCKET_norm)
 # correlation of 93% !!!
-
-lm <- lm(data_pre.period$GOOG_norm ~  sqrt(data_pre.period$BUCKET_norm) )
-
 summary(lm)
 
 # R squared of 86% ! pretty good!
