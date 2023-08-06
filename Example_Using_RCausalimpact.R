@@ -38,7 +38,7 @@ library(quantmod)
 
 # https://financetrain.com/downloading-stock-data-in-r-using-quantmod
 
-getSymbols("RH",
+getSymbols("NYSE:RHT",
            from = "2022/11/30",
            to = "2023/03/31",
            periodicity = "daily")
