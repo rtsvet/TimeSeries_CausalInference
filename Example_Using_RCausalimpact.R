@@ -31,3 +31,32 @@ plot(impact)
 summary(impact)
 
 summary(impact, "report") # even better
+
+
+### -----------------------
+library(quantmod) 
+
+# https://financetrain.com/downloading-stock-data-in-r-using-quantmod
+
+getSymbols("GOOG",
+           from = "2022/11/30",
+           to = "2023/03/31",
+           periodicity = "daily")
+
+# Take all the interesting shares
+
+my_comp_symbols <- c("AAPL", "GOOG", "META")
+
+myStocks <-lapply(my_comp_symbols, function(x) {getSymbols(x, 
+                                                             from ="2022/11/30", 
+                                                             to = "2023/03/31",
+                                                             periodicity = "daily",
+                                                             auto.assign=FALSE)} )
+
+names(myStocks) <- my_comp_symbols
+
+# let's look at the apple
+head(myStocks$AAPL)
+
+# We want only the adjusted stocks
+adjustedPrices <- lapply(myStocks, Ad)
